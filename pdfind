@@ -30,7 +30,6 @@ echo ""
 
 read -rp "> SELECT TARGET [1–${#RESULTS[@]}]: " SEL
 
-# Validate numeric + bounds
 if ! [[ "$SEL" =~ ^[0-9]+$ ]] || (( SEL < 1 || SEL > ${#RESULTS[@]} )); then
     echo "> INVALID_SELECTION — out-of-bounds or non-numeric"
     exit 2
