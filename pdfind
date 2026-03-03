@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SEARCH_ROOT="${PDFIND_ROOT:-$HOME}"   # Override via env var
+
+if [[ $# -lt 1 ]]; then
+    echo "USAGE: pdfind <query_string>"
+    echo "EXAMPLE: pdfind Structure"
+    exit 1
+fi
+
+QUERY="$1"
+echo "> SCANNING — query_vector: \"$QUERY\""
+
+mapfile -t RESULTS < <(fd --type f --extension pdf --ignore-case "$QUERY" "$SEARCH_ROOT" 2>/dev/null)
+
+if [[ ${#RESULTS[@]} -eq 0 ]]; then
+    echo "> SIGNAL_LOSS — No PDF targets matched: \"$QUERY\""
+    exit 1
+fi
+
+echo ""
+echo "> TARGET ACQUISITION — ${#RESULTS[@]} result(s) locked:"
+echo ""
+for i in "${!RESULTS[@]}"; do
+    echo "  $((i+1)). $(basename "${RESULTS[$i]}")"
+done
+echo ""
+
+read -rp "> SELECT TARGET [1–${#RESULTS[@]}]: " SEL
+
+# Validate numeric + bounds
+if ! [[ "$SEL" =~ ^[0-9]+$ ]] || (( SEL < 1 || SEL > ${#RESULTS[@]} )); then
+    echo "> INVALID_SELECTION — out-of-bounds or non-numeric"
+    exit 2
+fi
+
+TARGET="${RESULTS[$((SEL-1))]}"
+echo "> UPLINK CONFIRMED — Dispatching: $(basename "$TARGET")"
+zathura "$TARGET" &
+disown
